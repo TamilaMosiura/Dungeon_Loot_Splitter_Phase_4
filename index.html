@@ -70,6 +70,29 @@
       <button id="reset">Reset Application</button>
     </section>
 
+    <section class="panel explanation">
+      <h2>Sync lifecycle</h2>
+      <ul>
+        <li>Very straightforward process where I fetch what is in state (if any) and update UI. if no data, than do nothing, as there is nothing to render</li>
+        <li>When data exists, show banner and render details</li>
+        <li>When user makes changes, validate changes and save to state. Then next time when page refreshed, the data coma back from server and can be rendered again.</li>
+        <li>To clean the state, there is reset button exists. It not clearly remove the state (as I don't know how to do that), rather set it to empy array for loot and set 0 to partySize</li>
+      </ul>
+      <br>
+      <br>
+      <br>
+      <br>
+      <h2>Load lifecycle</h2>
+      <ul>
+        <li>Loading was described above in sync. Anyway, I want to add here, that by loading errors might happen.</li>
+        <li>Errors can be - in data - this is when the data was saved incorrectly or the data itself is incorrect</li>
+        <li>it can be in connection - when some connection issues happening, or internet disappered</li>
+        <li>it can be error on server - data is not available and can be fetched correctly.</li>
+        <li>So, all of the situations should be handled correctly and in most cases shouwn to user with good UI</li>
+        <li>In some cases data can not be shown to user and system can retry a few times before really show to user that error happened</li>
+      </ul>
+    </section>
+
   </main>
 
   <script src="js/script.js"></script>
