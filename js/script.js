@@ -17,7 +17,14 @@ const partyErrorEl = document.getElementById("party-error");
 const partyConfirmEl = document.getElementById("party-confirm");
 const lootErrorEl = document.getElementById("loot-error");
 const resetBtn = document.getElementById("reset");
+const topError = document.getElementById('top-error');
+const topSuccess = document.getElementById('top-success');
+const topProcessing = document.getElementById('top-processing');
 
+const REQ_STATUS = {
+  SUCCESS: 'success',
+  ERROR: 'error',
+}
 
 const url = 'http://goldtop.hopto.org'
 const studentId = "TamilaM"
@@ -25,83 +32,149 @@ const studentId = "TamilaM"
 initialize();
 
 function initialize() {
-  fetch(`${url}/load/${studentId}`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        const status = data.status;
-        if (status === 'empty') {
-          throw new Error(`No saved state found for student ${studentId}`);
-        }
-        const state = data;
+  topProcessing.textContent = `State is loading for student ${studentId}...`;
+  topProcessing.classList.remove('hidden');
+
+  getState()
+    .then(state => {
+      topProcessing.classList.add('hidden');
+
+      if (state.status === REQ_STATUS.SUCCESS) {
+        topSuccess.textContent = `State loaded successfully for student ${studentId}!`;
+        topSuccess.classList.remove('hidden');
         partySizeInput.value = state.partySize > 0 ? state.partySize : "";
+
         updateUI();
-    })
-    .catch(error => {
-        const topError = document.getElementById('top-error');
-        topError.textContent = error.message;
+      } else {
+        topError.textContent = `No saved state found for student ${studentId}`;
         topError.classList.remove('hidden');
-    });
+      }
+
+    })
+
 }
 
 function getState() {
-  const state = localStorage.getItem("state");
-  return state ? JSON.parse(state) : { lootItems: [], partySize: 0 };
+  return fetch(`${url}/load/${studentId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json"
+    },
+  })
+    .then(response => response.json())
+    .then(data => {
+      const state = {
+        status: data.status === 'loaded' ? REQ_STATUS.SUCCESS : REQ_STATUS.ERROR,
+        lootItems: data.state.loot || [],
+        partySize: data.state.partySize || 0
+      }
+      return state;
+    })
+    .catch(error => {
+      const state = {
+        status: REQ_STATUS.ERROR,
+        loot: [],
+        partySize: 0
+      }
+      return state;
+    });
 }
 
-function setState({ loot, partySize }) {
-  const state = getState();
-  if (loot !== undefined) {
-    state.lootItems = loot;
-  }
-  if (partySize !== undefined) {
-    state.partySize = partySize;
-  }
-  localStorage.setItem("state", JSON.stringify(state));
+function setState(state) {
+  topError.classList.add('hidden');
+  topSuccess.classList.add('hidden');
+  topProcessing.textContent = `State is saving for student ${studentId}...`;
+  topProcessing.classList.remove('hidden');
+
+  return syncToServer(state)
+    .then((status) => {
+      topProcessing.classList.add('hidden');
+      if (status === REQ_STATUS.SUCCESS) {
+        topSuccess.textContent = `State saved successfully for student ${studentId}!`;
+        topSuccess.classList.remove('hidden');
+
+        updateUI();
+      } else {
+        topError.textContent = `Failed to save state for student ${studentId}`;
+        topError.classList.remove('hidden');
+      }
+
+    })
+}
+
+function syncToServer(state) {
+  const payload = {
+    studentId: studentId,
+    state: {
+      loot: state.lootItems,
+      partySize: state.partySize
+    }
+  };
+
+  return fetch(`http://goldtop.hopto.org/save/${studentId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'saved') {
+        return REQ_STATUS.SUCCESS;
+      } else {
+        return REQ_STATUS.ERROR;
+      }
+    })
+    .catch(error => {
+      return REQ_STATUS.ERROR;
+    });
 }
 
 function resetState() {
-  localStorage.removeItem("state");
+  return syncToServer({
+    lootItems: [],
+    partySize: 0
+  })
 }
 
 // centralized update function
 function updateUI() {
-  const state = getState();
-  const {
-    newPartySize,
-  } = validatePartySize(partySizeInput, state.partySize);
+  getState().then(state => {
+    const {
+      newPartySize,
+    } = validatePartySize(partySizeInput, state.partySize);
 
-  setState({ partySize: newPartySize });
+    if(newPartySize !== state.partySize) {
+      setState({ ...state, partySize: newPartySize });
+    }
 
-  renderLootList(state);
+    renderLootList(state);
 
-  // calculate total loot
-  let totalLoot = 0;
-  for (let i = 0; i < state.lootItems.length; i++) {
-    totalLoot += state.lootItems[i].value * state.lootItems[i].quantity;
-  }
-  totalLootEl.textContent = totalLoot.toFixed(2);
+    // calculate total loot
+    let totalLoot = 0;
+    for (let i = 0; i < state.lootItems.length; i++) {
+      totalLoot += state.lootItems[i].value * state.lootItems[i].quantity;
+    }
+    totalLootEl.textContent = totalLoot.toFixed(2);
 
-  // calculate loot per party member and update results
-  if (state.lootItems.length > 0 && state.partySize > 0) {
-    const perMember = totalLoot / state.partySize;
-    finalTotalEl.textContent = "$" + totalLoot.toFixed(2);
-    perMemberEl.textContent = "$" + perMember.toFixed(2);
-    resultsArea.className = "results-area";
-  } else {
-    resultsArea.className = "results-area hidden";
-  }
+    // calculate loot per party member and update results
+    if (state.lootItems.length > 0 && state.partySize > 0) {
+      const perMember = totalLoot / state.partySize;
+      finalTotalEl.textContent = "$" + totalLoot.toFixed(2);
+      perMemberEl.textContent = "$" + perMember.toFixed(2);
+      resultsArea.className = "results-area";
+    } else {
+      resultsArea.className = "results-area hidden";
+    }
+  })
 }
 
 function renderLootList(state) {
   lootRows.innerHTML = "";
 
   // if empty, nothing to render
-  if (state.lootItems.length === 0) {
+  if (state.lootItems?.length === 0) {
     noLootMessage.classList.remove("hidden");
     lootTable.classList.add("hidden");
     totalRowEl.classList.add("hidden");
@@ -183,13 +256,14 @@ function addLoot() {
     return;
   }
 
-  const state = getState();
-  const lootItems = state.lootItems;
-  lootItems.push({ name, value, quantity });
-  setState({ loot: lootItems });
+  getState().then(state => {
+    const lootItems = state.lootItems;
+    lootItems.push({ name, value, quantity });
+    setState({ ...state, loot: lootItems });
 
-  // state changed
-  updateUI();
+    // state changed
+    updateUI();
+  });
 }
 
 function validateNewLoot() {
@@ -236,11 +310,12 @@ function validateNewLoot() {
 }
 
 function removeLoot(index) {
-  const state = getState();
-  const lootItems = state.lootItems;
-  lootItems.splice(index, 1);
-  setState({ loot: lootItems });
-  updateUI();
+  getState().then(state => {
+    const lootItems = state.lootItems;
+    lootItems.splice(index, 1);
+    setState({ ...state, loot: lootItems });
+    updateUI();
+  });
 }
 
 function splitLoot() {
@@ -248,9 +323,10 @@ function splitLoot() {
 }
 
 function reset() {
-  resetState();
-  partySizeInput.value = "";
-  updateUI();
+  resetState().then(() => {
+    partySizeInput.value = "";
+    updateUI();
+  });
 }
 
 // add loot button
