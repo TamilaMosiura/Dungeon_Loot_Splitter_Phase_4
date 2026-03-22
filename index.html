@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="author" content="Tamila Mosiura">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dungeon Loot Splitter Phase 4</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <header>
+    <h1>Dungeon Loot Splitter Phase 4</h1>
+  </header>
+
+  <main>
+
+    <section class="panel party-setup-panel">
+      <h2>Party 🎉</h2>
+      <label for="party-size">Number of Party Members:</label>
+      <input type="number" min="1" step="1" placeholder="e.g. 4" id="party-size">
+      <p class="error-msg" id="party-error"></p>
+      <p class="confirm-msg" id="party-confirm"></p>
+    </section>
+
+    <section class="panel" id="add-loot-panel">
+      <h2>Add Loot 🎁</h2>
+      <label for="loot-name">Loot Name:</label>
+      <input type="text" placeholder="e.g. Golden Sword" id="loot-name">
+      <label for="loot-value">Loot Value:</label>
+      <input type="number" min="0" step="0.01" placeholder="e.g. 150.00" id="loot-value">
+      <label for="loot-quantity">Quantity:</label>
+      <input type="number" min="1" step="1" placeholder="e.g. 1" id="loot-quantity">
+      <p class="error-msg" id="loot-error"></p>
+      <button id="add-loot-btn">Add Loot</button>
+    </section>
+
+    <section class="panel" id="loot-list-panel">
+      <h2>Loot List 📋</h2>
+      <div id="noLootMessage">No loot added.</div>
+      <div class="loot-table hidden" id="loot-table">
+        <div class="loot-header">Name</div>
+        <div class="loot-header">Value</div>
+        <div class="loot-header">Quantity</div>
+        <div class="loot-header">Remove</div>
+        <div id="lootRows"></div>
+      </div>
+      <div class="total-row" id="total-row">
+        Total Loot: <span id="totalLoot">$0.00</span>
+      </div>
+    </section>
+
+    <section class="panel" id="split-loot-panel">
+      <h2>Split Loot 🧮</h2>
+      <div class="results-area hidden" id="results-area">
+        <p>Total Loot: <span id="final-total">$0.00</span></p>
+        <p>Loot Per Party Member: <span id="per-member">$0.00</span></p>
+        <p id="split-error" class="error-msg"></p>
+      </div>
+    </section>
+
+    <section class="panel explanation"> 
+      <button id="reset">Reset Application</button>
+    </section>
+
+  </main>
+
+  <script src="js/script.js"></script>
+</body>
+
+</html>
