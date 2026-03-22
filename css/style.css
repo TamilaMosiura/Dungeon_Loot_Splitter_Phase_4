@@ -168,6 +168,19 @@ button:disabled:hover {
 }
 
 
+#top-error {
+  max-width: 500px;
+  margin: 16px auto;
+  padding: 14px 24px;
+  background-color: #fef2f2;
+  border: 1px solid #c13515;
+  border-radius: 8px;
+  color: #c13515;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .error-msg {
   color: #c13515;
   font-size: 13px;

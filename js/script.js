@@ -35,14 +35,16 @@ function initialize() {
     .then(data => {
         const status = data.status;
         if (status === 'empty') {
-          throw new Error('No saved state found for this student ID.');
+          throw new Error(`No saved state found for student ${studentId}`);
         }
         const state = data;
         partySizeInput.value = state.partySize > 0 ? state.partySize : "";
         updateUI();
     })
     .catch(error => {
-        
+        const topError = document.getElementById('top-error');
+        topError.textContent = error.message;
+        topError.classList.remove('hidden');
     });
 }
 
